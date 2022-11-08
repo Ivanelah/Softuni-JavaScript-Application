@@ -11,7 +11,7 @@ function handleCreateRecord() {
   const personEl = document.getElementById("person");
   const phoneEl = document.getElementById("phone");
 
-  onCreateRecord(personEl.ariaValueMax, phoneEl.value);
+  onCreateRecord(personEl.value, phoneEl.value);
   personEl.value = "";
   phoneEl.value = "";
 }
