@@ -1,80 +1,61 @@
 function attachEvents() {
-  document
-    .getElementById("btnLoad")
-    .addEventListener("click", onLoadAllRecords);
-  document
-    .getElementById("btnCreate")
-    .addEventListener("click", handleCreateRecord);
-}
-
-function handleCreateRecord() {
-  const personEl = document.getElementById("person");
-  const phoneEl = document.getElementById("phone");
-
-  onCreateRecord(personEl.value, phoneEl.value);
-  personEl.value = "";
-  phoneEl.value = "";
-}
-
-function renderRecord(data) {
+  const url = `http://localhost:3030/jsonstore/phonebook`;
   const ul = document.getElementById("phonebook");
-  ul.innerHTML = "";
-  Object.values(data).forEach((rec) => {
-    const li = document.createElement("li");
-    li.textContent = `${rec.person}: ${rec.phone}`;
-    li.setAttribute("data-id", rec._id);
+  const loadBtn = document.getElementById("btnLoad");
+  const createBtn = document.getElementById("btnCreate");
 
-    const btn = document.createElement("button");
-    btn.textContent = "Delete";
-    btn.addEventListener("click", handleDelete);
-    li.appendChild(btn);
-    ul.appendChild(li);
-  });
-}
+  const person = document.getElementById("person");
+  const phone = document.getElementById("phone");
 
-function handleDelete(e) {
-  const li = e.target.parentElement;
-  const id = li.getAttribute("data-id");
-  onDeleteRecord(id);
-  li.remove();
-}
+  loadBtn.addEventListener("click", onClickLoad);
+  createBtn.addEventListener("click", onClickCreate);
 
-async function onLoadAllRecords() {
-  const url = `http://localhost:3030/jsonstore/phonebook`;
-  const response = await fetch(url);
-  const data = await response.json();
+  async function onClickLoad() {
+    ul.innerHTML = "";
+    const response = await fetch(url);
+    const data = await response.json();
 
-  return renderRecord(data);
-}
+    Object.values(data).forEach((x) => {
+      const { person, phone, _id } = x;
+      const li = htmlGenerator("li", `${person}: ${phone}`, ul);
+      li.setAttribute("id", _id);
 
-async function onCreateRecord(person, phone) {
-  const url = `http://localhost:3030/jsonstore/phonebook`;
-  const body = {
-    person,
-    phone,
-  };
-  const header = getHeader("POST", body);
-  const response = await fetch(url, header);
-  const data = await response.json();
-  onLoadAllRecords();
-  return data;
-}
-async function onDeleteRecord(id) {
-  const url = `http://localhost:3030/jsonstore/phonebook/${id}`;
-  const headers = getHeader("DELETE", null);
-  const response = await fetch(url, headers);
-  const data = await response.json();
-  return data;
-}
+      const deleteBtn = htmlGenerator("button", "Delete", li);
+      deleteBtn.addEventListener("click", onClickDelete);
+    });
+  }
+  async function onClickDelete(e) {
+    const id = e.target.parentNode.id;
+    e.target.parentNode.remove();
 
-function getHeader(method, body) {
-  return {
-    method: `${method}`,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  };
+    const deleteRes = await fetch(`${url}/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async function onClickCreate() {
+    if (person.value != "" && phone.value != "") {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ person: person.value, phone: phone.value }),
+      });
+      loadBtn.click();
+
+      person.value = "";
+      phone.value = "";
+    }
+  }
+
+  function htmlGenerator(type, content, parent) {
+    const element = document.createElement(type);
+    element.textContent = content;
+
+    if (parent) {
+      parent.appendChild(element);
+    }
+    return element;
+  }
 }
 
 attachEvents();
